@@ -8,6 +8,6 @@ A simple Snake-style game in Racket.
 
 Run the source code with
 
-    racket hebi.rkt
+    gracket hebi.rkt
 
 Or download a pre-built executable for macOS from the "releases" tab.
