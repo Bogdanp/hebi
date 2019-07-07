@@ -60,15 +60,15 @@
   (define col (entity-col p))
   (define-values (next-row next-col)
     (case direction
-      [(north) (values (modulo (sub1 row) ROWS) col)]
-      [(south) (values (modulo (add1 row) ROWS) col)]
-      [(west)  (values row (modulo (sub1 col) COLS))]
-      [(east)  (values row (modulo (add1 col) COLS))]
+      [(north) (values (sub1 row) col)]
+      [(south) (values (add1 row) col)]
+      [(west)  (values row (sub1 col))]
+      [(east)  (values row (add1 col))]
       [(halt)  (values row col)]))
 
   (struct-copy part p
-               [row #:parent entity next-row]
-               [col #:parent entity next-col]))
+               [row #:parent entity (modulo next-row ROWS)]
+               [col #:parent entity (modulo next-col COLS)]))
 
 (struct snake (parts)
   #:transparent)
@@ -320,7 +320,8 @@
              (and event (enqueue-event event))))
          [label  "Hebi"]
          [width  GAME-W]
-         [height GAME-H]))
+         [height (+ GAME-H SCALE)]
+         [style '(no-resize-border)]))
 
   (define canvas
     (new canvas%
