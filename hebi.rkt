@@ -135,7 +135,7 @@
 
 ;; worlds ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(struct world (snake apple direction directions score)
+(struct world (snake apple direction directions score paused?)
   #:transparent)
 
 (define (make-initial-world)
@@ -143,7 +143,8 @@
          (make-apple)
          'east
          '(east east east)
-         0))
+         0
+         #f))
 
 (define (world-difficulty w)
   (max 8 (sqrt ((world-score w) . / . 2))))
@@ -153,7 +154,12 @@
   (for/fold ([w w])
             ([e events])
     (match e
-      ['restart (make-initial-world)]
+      ['restart
+       (make-initial-world)]
+
+      ['pause/unpause
+       (struct-copy world w [paused? (not (world-paused? w))])]
+
       [(list 'change-direction dir)
        (define can-change-direction?
          (match (cons current-direction dir)
@@ -212,11 +218,13 @@
                                  (snake-length snake))]))
 
 (define (world-step w [events null])
-  (let* ([w (world-apply-events w events)]
-         [w (world-handle-apple-collision w)]
-         [w (world-handle-snake-collisions w)]
-         [w (world-move-snake w)])
-    w))
+  (let [(w (world-apply-events w events))]
+    (cond
+      [(world-paused? w) w]
+      [else (let* ([w (world-handle-apple-collision w)]
+                   [w (world-handle-snake-collisions w)]
+                   [w (world-move-snake w)])
+              w)])))
 
 
 ;; game loop ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -256,7 +264,7 @@
 (define (render-score s dc)
   (define score:str (string-upcase (format "Score: ~a" s)))
   (send dc set-text-foreground "white")
-  (send dc draw-text score:str 12 12)
+  (send dc draw-text score:str 11 11)
   (send dc set-text-foreground "black")
   (send dc draw-text score:str 10 10))
 
@@ -297,13 +305,14 @@
            (define/override (on-subwindow-char _ e)
              (define event
                (match (send e get-key-code)
-                 [#\q    ((application-quit-handler))]
-                 [#\r    'restart]
-                 ['up    '(change-direction north)]
-                 ['down  '(change-direction south)]
-                 ['left  '(change-direction west)]
-                 ['right '(change-direction east)]
-                 [_      #f]))
+                 [#\q     ((application-quit-handler))]
+                 [#\r     'restart]
+                 [#\space 'pause/unpause]
+                 ['up     '(change-direction north)]
+                 ['down   '(change-direction south)]
+                 ['left   '(change-direction west)]
+                 ['right  '(change-direction east)]
+                 [_       #f]))
 
              (and event (enqueue-event event))))
          [label  "Hebi"]
@@ -312,7 +321,7 @@
          [style '(no-resize-border)]))
 
   (define monospace-font
-    (send the-font-list find-or-create-font 12 'modern 'normal 'normal))
+    (send the-font-list find-or-create-font 12 'modern 'normal 'bold))
 
   (define canvas
     (new canvas%
