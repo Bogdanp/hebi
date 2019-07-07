@@ -1,8 +1,12 @@
-Hebi.zip: Hebi.app
+hebi.zip: dist
 	zip -r hebi.zip dist
 
-Hebi.app: build
+dist: Hebi.app
 	raco distribute dist Hebi.app
 
-build: hebi.rkt
+Hebi.app: hebi.rkt
 	raco exe --gui -o Hebi.app hebi.rkt
+
+.PHONY: clean
+clean:
+	rm -r Hebi.app dist hebi.zip
