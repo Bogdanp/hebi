@@ -180,19 +180,6 @@
                                                            (change-direction west))))
                   'north)))
 
-(define (world-move-snake w)
-  (define snake (world-snake w))
-  (define direction (world-direction w))
-  (define directions (world-directions w))
-  (struct-copy world w
-               [snake (snake-move snake directions)]
-               [directions (take (cons direction directions)
-                                 (snake-length snake))]))
-
-(define (world-move-entities w)
-  (let* ([w (world-move-snake w)])
-    w))
-
 (define (world-handle-apple-collision w)
   (define apple (world-apple w))
   (define snake (world-snake w))
@@ -215,15 +202,20 @@
 
     [else w]))
 
-(define (world-handle-collisions w)
-  (let* ([w (world-handle-apple-collision w)]
-         [w (world-handle-snake-collisions w)])
-    w))
+(define (world-move-snake w)
+  (define snake (world-snake w))
+  (define direction (world-direction w))
+  (define directions (world-directions w))
+  (struct-copy world w
+               [snake (snake-move snake directions)]
+               [directions (take (cons direction directions)
+                                 (snake-length snake))]))
 
 (define (world-step w [events null])
   (let* ([w (world-apply-events w events)]
-         [w (world-handle-collisions w)]
-         [w (world-move-entities w)])
+         [w (world-handle-apple-collision w)]
+         [w (world-handle-snake-collisions w)]
+         [w (world-move-snake w)])
     w))
 
 
