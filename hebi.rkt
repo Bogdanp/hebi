@@ -252,7 +252,6 @@
     (define-values (x y)
       (entity-position a))
 
-    (send dc set-smoothing 'aligned)
     (send dc set-brush "red" 'solid)
     (send dc set-pen "white" 1 'transparent)
     (send dc draw-rounded-rectangle x y SCALE SCALE 5)))
@@ -270,7 +269,11 @@
   (for-each (curryr render-snake-part dc) (snake-body s)))
 
 (define (render-score s dc)
-  (send dc draw-text (format "Score: ~a" s) 10 10))
+  (define score:str (string-upcase (format "Score: ~a" s)))
+  (send dc set-text-foreground "white")
+  (send dc draw-text score:str 12 12)
+  (send dc set-text-foreground "black")
+  (send dc draw-text score:str 10 10))
 
 (define (make-game-loop)
   (define events (make-async-channel))
@@ -323,10 +326,15 @@
          [height (+ GAME-H SCALE)]
          [style '(no-resize-border)]))
 
+  (define monospace-font
+    (send the-font-list find-or-create-font 12 'modern 'normal 'normal))
+
   (define canvas
     (new canvas%
          [parent window]
          [paint-callback (lambda (_ dc)
+                           (send dc set-font monospace-font)
+                           (send dc set-smoothing 'aligned)
                            (render dc))]))
 
   (send window show #t)
