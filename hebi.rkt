@@ -180,11 +180,6 @@
                                                            (change-direction west))))
                   'north)))
 
-(define (world-place-apple w)
-  (cond
-    [(world-apple w) w]
-    [else (struct-copy world w [apple (make-apple)])]))
-
 (define (world-move-snake w)
   (define snake (world-snake w))
   (define direction (world-direction w))
@@ -195,8 +190,7 @@
                                  (snake-length snake))]))
 
 (define (world-move-entities w)
-  (let* ([w (world-place-apple w)]
-         [w (world-move-snake w)])
+  (let* ([w (world-move-snake w)])
     w))
 
 (define (world-handle-apple-collision w)
@@ -204,9 +198,9 @@
   (define snake (world-snake w))
   (define directions (world-directions w))
   (cond
-    [(and apple (collision? apple (snake-head snake)))
+    [(collision? apple (snake-head snake))
      (struct-copy world w
-                  [apple #f]
+                  [apple (make-apple)]
                   [score (+ (world-score w) (apple-points apple))]
                   [snake (snake-grow snake)]
                   [directions (append directions (list 'halt))])]
@@ -242,23 +236,22 @@
         (loop (async-channel-try-get c) (cons e events))
         (reverse events))))
 
-(define (entity-position e)
+(define (entity-screen-position e)
   (values
    (* (entity-col e) SCALE)
    (* (entity-row e) SCALE)))
 
 (define (render-apple a dc)
-  (when a
-    (define-values (x y)
-      (entity-position a))
+  (define-values (x y)
+    (entity-screen-position a))
 
-    (send dc set-brush "red" 'solid)
-    (send dc set-pen "white" 1 'transparent)
-    (send dc draw-rounded-rectangle x y SCALE SCALE 5)))
+  (send dc set-brush "red" 'solid)
+  (send dc set-pen "white" 1 'transparent)
+  (send dc draw-rounded-rectangle x y SCALE SCALE 5))
 
 (define (render-snake-part p dc [color "black"])
   (define-values (x y)
-    (entity-position p))
+    (entity-screen-position p))
 
   (send dc set-brush color 'solid)
   (send dc set-pen "white" 1 'solid)
